@@ -1,23 +1,25 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import CryptoJS from 'crypto-js'
 
 import { KJUR } from 'jsrsasign';
 import {Buffer} from 'buffer';
+import jwt_decode from "jwt-decode";
 import { ZoomMtg } from '@zoomus/websdk'
 import './Zoom.css'
-export default function Zoom({name, roleUser,Email}) {
+import { meetingLength, redirectUrl } from '../env';
+export default function Zoom({meeting_password,meeting_id,signature, email, username}) {
 
 let apiKey = 'ZLDSZm0QR6CJOXdY_VZy7g'
 let apiSecret = 'yrHRncbUhgW1iH2vyhrYTmyqLm0WvrQhBhnF'
-let sdkKey = 'pQgYcxmQwygXIHiwyNy691G6So5aUjF4fIi4'
-let sdkSecret = '28Xur9RGCEwdwpMoAOCPCHWFemPCR9IZaEa2'
+let sdkKey = 'SuBCj7EVVYTEoxZtCi6nQAN4PjB57v8fN3AY'
+let sdkSecret = 'RHPHDNVwJrDGDREDnynKPW5F1uRgnzUE96B1'
 let leaveUrl = 'http://localhost:3000/exited'
 let meetingNumber =  77669282631
-let userName = name
-let userEmail = Email
-let passWord = '2L80Z3'
-let role = parseInt(roleUser); //role 1 is for admin
-let signature = ''
+let userName = ''
+let userEmail = email
+
+let role = 1 //role 1 is for admin
+
 
 // function generateSignature(apiKey, apiSecret, meetingNumber, role) {
 //     return new Promise((res,rej) => {
@@ -39,7 +41,7 @@ let signature = ''
 function generateSignature(sdkKey, sdkSecret, meetingNumber, role) {
 
     const iat = Math.round((new Date().getTime() - 30000) / 1000)
-    const exp = iat + 60 * 60 * 2
+    const exp = iat + 120
     const oHeader = { alg: 'HS256', typ: 'JWT' }
   
     const oPayload = {
@@ -49,7 +51,7 @@ function generateSignature(sdkKey, sdkSecret, meetingNumber, role) {
       iat: iat,
       exp: exp,
       appKey: sdkKey,
-      tokenExp: iat + 60 * 60 * 2
+      tokenExp: iat + 120
     }
   
     const sHeader = JSON.stringify(oHeader)
@@ -59,16 +61,81 @@ function generateSignature(sdkKey, sdkSecret, meetingNumber, role) {
     return sdkJWT
   }
 
-
+const [start, setStart] = useState(null)
 useEffect(()=>{
     showZoomDiv()
-    signature =  generateSignature(sdkKey, sdkSecret, meetingNumber, role)
+    signature =  generateSignature(sdkKey, sdkSecret, meeting_id, role)
     console.log({signature})
+
     ZoomMtg.setZoomJSLib('https://source.zoom.us/2.7.0/lib','/av')
     ZoomMtg.preLoadWasm()
     ZoomMtg.prepareWebSDK()
     initializeMeeting()
+    var decoded = jwt_decode(signature);
+    console.log(decoded);
+    setStart(decoded.iat *1000)
 })
+
+
+useEffect(()=>{
+  if(start){
+    //check and close meeting
+    // var handle=setInterval(checkTime,5000);  
+    
+    //timer
+    // var handle=setInterval(addtimer,5000); 
+  }
+
+  return ()=>{
+    // clearInterval(handle);
+  }
+},[start]);
+
+const checkTime = () => {
+  console.log('ere')
+  if(start == start+ 900000){
+    console.log('TimeUp')
+  }
+}
+
+const startTimer = () => {
+  console.log('start')
+  var handle =setInterval(addTime,1000); 
+}
+const addTime = () => {
+  let currentTime = document.getElementById('Main-timer').innerText
+  let timeArr = currentTime.split(':')
+
+  timeArr[0] = parseInt(timeArr[0])
+  timeArr[1] = parseInt(timeArr[1]) + 1
+  if(timeArr[1]>= 60){
+    timeArr[0] = timeArr[0] + 1
+    timeArr[1] = 0
+  }
+
+  //zero adders if less than 9
+  let secString, minString
+  if(timeArr[0]<=9){
+    minString = `0${timeArr[0]}`
+  }else{
+    minString = `${timeArr[0]}`
+  }
+
+  if(timeArr[1]<=9){
+    secString =`0${timeArr[1]}`
+  }else{
+    secString = `${timeArr[1]}`
+  }
+
+  document.getElementById('Main-timer').innerText = `${minString}:${secString}`
+
+
+  if(minString == meetingLength){
+    console.log('leave')
+    window.location.href = redirectUrl
+  }
+
+}
 
 const showZoomDiv = () => {
     document.getElementById('zmmtg-root').style.display = 'block'
@@ -82,12 +149,13 @@ const initializeMeeting = () =>  {
       
           ZoomMtg.join({
             signature: signature,
-            meetingNumber: meetingNumber,
-            userName: userName,
+            meetingNumber: parseInt(meeting_id),
+            userName: username,
             sdkKey: sdkKey,
-            passWord: passWord,
+            passWord: meeting_password,
             success: (success) => {
               console.log(success,'joined success')
+              startTimer()
             },
             error: (error) => {
               console.log(error,'err inside join')
@@ -101,6 +169,9 @@ const initializeMeeting = () =>  {
       })
 }
   return (
-    <div>Zoom</div>
+    <div>
+      <div className='Main-timer' id='Main-timer'>00:00</div>
+      Zoom
+    </div>
   )
 }
