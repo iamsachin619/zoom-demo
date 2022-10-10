@@ -18,7 +18,7 @@ function App() {
       {/* <input value={name} placeholder='Username' onChange={e => setName(e.target.value)}/><br/>
       <input value={email} placeholder='email' onChange={e => setEmail(e.target.value)}/><br/>
       <input value={role} placeholder='role' onChange={e => setRole(e.target.value)}/><br/> */}
-      {meeting?<Zoom signature={searchParams.get('signature')} meeting_id={searchParams.get('meeting_id')} meeting_password={searchParams.get('meeting_password')} email={searchParams.get('email')} username='test'/>:
+      {meeting?<Zoom signature={searchParams.get('signature')} meeting_id={searchParams.get('meeting_id')} meeting_password={searchParams.get('meeting_password')} email={searchParams.get('email')} username={searchParams.get('username')}/>:
       <div>
 
         <button onClick={()=>{

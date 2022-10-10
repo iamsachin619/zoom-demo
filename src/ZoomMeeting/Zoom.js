@@ -64,7 +64,7 @@ function generateSignature(sdkKey, sdkSecret, meetingNumber, role) {
 const [start, setStart] = useState(null)
 useEffect(()=>{
     showZoomDiv()
-    signature =  generateSignature(sdkKey, sdkSecret, meeting_id, role)
+    // signature =  generateSignature(sdkKey, sdkSecret, meeting_id, role)
     console.log({signature})
 
     ZoomMtg.setZoomJSLib('https://source.zoom.us/2.7.0/lib','/av')
